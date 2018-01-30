@@ -1,6 +1,7 @@
 #include "ukf.h"
 #include "Eigen/Dense"
 #include <iostream>
+#include "tools.h"
 
 using namespace std;
 using Eigen::MatrixXd;
@@ -12,6 +13,8 @@ using std::vector;
  * This is scaffolding, do not modify
  */
 UKF::UKF() {
+
+	Tools tools;
 
 	is_initialized_ = false;
 
@@ -198,8 +201,7 @@ void UKF::PredictMeanAndCovariance() {
 		VectorXd x_diff = Xsig_pred_.col(i) - x_;
 		
 		//angle normalization
-		while (x_diff(3) > M_PI) x_diff(3) -= 2.*M_PI;
-		while (x_diff(3) < -M_PI) x_diff(3) += 2.*M_PI;
+		x_diff(3) = tools.NormalizeAngle(x_diff(3));
 
 		P_ = P_ + weights_(i) * x_diff * x_diff.transpose();
 	}
@@ -325,6 +327,8 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 	long x_size = x_.size();
 	MatrixXd I = MatrixXd::Identity(x_size, x_size);
 	P_ = (I - K * H_laser_) * P_;
+
+	// TODO:  Calculate the Lidar NIS
 }
 
 void UKF::UpdateState(MeasurementPackage meas_package) {
@@ -336,17 +340,16 @@ void UKF::UpdateState(MeasurementPackage meas_package) {
 
 		//residual
 		VectorXd z_diff = Zsig_.col(i) - z_pred_;
+		
 		//angle normalization
-		while (z_diff(1) > M_PI) z_diff(1) -= 2.*M_PI;
-		while (z_diff(1) < -M_PI) z_diff(1) += 2.*M_PI;
-
+		z_diff(1) = tools.NormalizeAngle(z_diff(1));
+		
 		// state difference
 		VectorXd x_diff = Xsig_pred_.col(i) - x_;
 		
 		//angle normalization
-		while (x_diff(3) > M_PI) x_diff(3) -= 2.*M_PI;
-		while (x_diff(3) < -M_PI) x_diff(3) += 2.*M_PI;
-
+		x_diff(3) = tools.NormalizeAngle(x_diff(3));
+		
 		Tc = Tc + weights_(i) * x_diff * z_diff.transpose();
 	}
 
@@ -358,8 +361,7 @@ void UKF::UpdateState(MeasurementPackage meas_package) {
 	VectorXd z_diff = z - z_pred_;
 
 	//angle normalization
-	while (z_diff(1) > M_PI) z_diff(1) -= 2.*M_PI;
-	while (z_diff(1) < -M_PI) z_diff(1) += 2.*M_PI;
+	z_diff(1) = tools.NormalizeAngle(z_diff(1));
 
 	//update state mean and covariance matrix
 	x_ = x_ + K * z_diff;
@@ -403,8 +405,7 @@ void UKF::PredictRadarMeasurement() {
 		VectorXd z_diff = Zsig_.col(i) - z_pred_;
 
 		//angle normalization
-		while (z_diff(1) > M_PI) z_diff(1) -= 2.*M_PI;
-		while (z_diff(1) < -M_PI) z_diff(1) += 2.*M_PI;
+		z_diff(1) = tools.NormalizeAngle(z_diff(1));
 
 		S_ = S_ + weights_(i) * z_diff * z_diff.transpose();
 	}
@@ -423,4 +424,6 @@ void UKF::PredictRadarMeasurement() {
 void UKF::UpdateRadar(MeasurementPackage meas_package) {
 	PredictRadarMeasurement();
 	UpdateState(meas_package);
+	
+	//calculate the radar NIS
 }

@@ -6,12 +6,15 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include "tools.h"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
 class UKF {
 public:
+
+  Tools tools;
 
   ///* initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
@@ -61,7 +64,7 @@ public:
   ///* Weights of sigma points
   VectorXd weights_;
 
-  //* State dimension
+  ///* State dimension
   int n_x_;
 
   ///* Augmented state dimension
