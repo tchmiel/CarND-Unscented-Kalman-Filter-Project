@@ -94,6 +94,8 @@ public:
   //RADAR Measurement covariance matrix
   MatrixXd  R_radar_;
 
+  double NIS_lidar_;
+  double NIS_radar_;
 
   /**
    * Constructor

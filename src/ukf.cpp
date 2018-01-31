@@ -40,12 +40,13 @@ UKF::UKF() {
   // https://www.fhwa.dot.gov/publications/research/safety/04103/06.cfm
 	// The AASHTO Guide for the Development of Bicycle Facilities (p. 65) 
 	// uses a bicycle acceleration rate of 0.5 to 1 m/sec2 
-	std_a_ = 2;
+	std_a_ = 0.50;
 
 	// Process noise standard deviation yaw acceleration in rad/s^2
 	std_yawdd_ = 0.25;
 
 	//DO NOT MODIFY measurement noise values below these are provided by the sensor manufacturer.
+
 	// Laser measurement noise standard deviation position1 in m
 	std_laspx_ = 0.15;
 
@@ -152,6 +153,9 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
 		// spreading parameter
 		lambda_ = 3 - n_aug_;
+
+		NIS_lidar_ = 0;
+		NIS_radar_ = 0;
 
 		// done initializing, no need to predict or update
 		is_initialized_ = true;
@@ -328,7 +332,8 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 	MatrixXd I = MatrixXd::Identity(x_size, x_size);
 	P_ = (I - K * H_laser_) * P_;
 
-	// TODO:  Calculate the Lidar NIS
+	// Calculate the Lidar NIS
+	NIS_lidar_ = y.transpose() * Si * y;
 }
 
 void UKF::UpdateState(MeasurementPackage meas_package) {
@@ -366,6 +371,9 @@ void UKF::UpdateState(MeasurementPackage meas_package) {
 	//update state mean and covariance matrix
 	x_ = x_ + K * z_diff;
 	P_ = P_ - K * S_ * K.transpose();
+
+	// Calculate the Radar NIS
+	NIS_radar_ = z_diff.transpose() * S_.inverse() * z_diff;
 
 	//print result
 	//std::cout << "Updated state x: " << std::endl << x_ << std::endl;
